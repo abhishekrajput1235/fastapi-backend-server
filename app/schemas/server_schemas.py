@@ -30,6 +30,18 @@ class ServerBase(BaseModel):
 class ServerCreate(ServerBase):
     pass
 
+
+class ServerUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    cpu: Optional[str] = None
+    ram: Optional[str] = None
+    storage: Optional[str] = None
+    bandwidth: Optional[str] = None
+    base_price: Optional[float] = None
+    is_active: Optional[bool] = None
+
+
 class ServerOut(ServerBase):
     id: int
     created_at: datetime
