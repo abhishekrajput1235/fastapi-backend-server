@@ -9,7 +9,7 @@ class OrderBase(BaseModel):
     server_details: Optional[Dict[str, Any]] = None
 
 class OrderCreate(OrderBase):
-    pass
+    server_id: int
 
 class OrderUpdate(BaseModel):
     order_status: Optional[str] = None

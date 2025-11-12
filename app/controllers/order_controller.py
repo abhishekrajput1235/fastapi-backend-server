@@ -17,11 +17,11 @@ def create_order(db: Session, order: OrderCreate, user_id: int):
     db_order = Order(
         user_id=user_id,
         plan_id=order.plan_id,
+        server_id=order.server_id,
         order_number=order_number,
         billing_cycle=order.billing_cycle,
         total_amount=total_amount,
         grand_total=grand_total,
-        server_details=order.server_details
     )
     db.add(db_order)
     db.commit()

@@ -20,40 +20,7 @@ RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 
-def buy_server(db: Session, order: OrderCreate, user_id: int):
-    # Create the order in the database
-    db_order = create_order_logic(db, order, user_id)
-    if not db_order:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plan not found")
 
-    # Create a Razorpay order
-    razorpay_order_data = {
-        "amount": int(db_order.grand_total * 100),  # Amount in paise
-        "currency": "INR",
-        "notes": {"order_id": db_order.id}
-    }
-    razorpay_order = razorpay_client.order.create(razorpay_order_data)
-
-    # Create a pending payment record
-    payment = Payment(
-        user_id=user_id,
-        amount=db_order.grand_total,
-        payment_method="razorpay",
-        payment_status="pending",
-        transaction_id=razorpay_order["id"],
-        payment_date=datetime.utcnow(),
-        notes={"order_id": db_order.id}
-    )
-    db.add(payment)
-    db.commit()
-    db.refresh(payment)
-
-    return {
-        "razorpay_order_id": razorpay_order["id"],
-        "amount": db_order.grand_total,
-        "razorpay_key": RAZORPAY_KEY_ID,
-        "order_id": db_order.id
-    }
 
 
 # ===============================================

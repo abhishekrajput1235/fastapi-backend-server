@@ -6,3 +6,4 @@ python-dotenv
 passlib[bcrypt]
 razorpay
 python-multipart
+python-jose[cryptography]

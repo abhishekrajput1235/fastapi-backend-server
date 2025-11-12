@@ -11,7 +11,7 @@ from app.schemas.order import OrderCreate
 from datetime import date, timedelta, datetime
 from app.controllers.order_controller import create_order as create_order_logic
 
-def create_razorpay_order(db: Session, order_details: OrderCreate, user_id: int):
+def create_payment_order(db: Session, order_details: OrderCreate, user_id: int):
     # Create the order in the database
     db_order = create_order_logic(db, order_details, user_id)
     if not db_order:
@@ -28,12 +28,12 @@ def create_razorpay_order(db: Session, order_details: OrderCreate, user_id: int)
     # Create a pending payment record
     payment = Payment(
         user_id=user_id,
+        order_id=db_order.id,
         amount=db_order.grand_total,
         payment_method="razorpay",
         payment_status="pending",
         transaction_id=razorpay_order["id"],
         payment_date=datetime.utcnow(),
-        notes={"order_id": db_order.id}
     )
     db.add(payment)
     db.commit()
@@ -66,14 +66,20 @@ def verify_payment(db: Session, razorpay_order_id: str, razorpay_payment_id: str
     payment.transaction_id = razorpay_payment_id
     db.commit()
 
+    # Fulfill the order
+    fulfill_order(db, payment.order_id)
+
+    return {"status": "success", "message": "Payment verified and subscription created"}
+
+
+def fulfill_order(db: Session, order_id: int):
     # Update order status
-    order = db.query(Order).filter(Order.id == payment.notes["order_id"]).first()
+    order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         return {"status": "error", "message": "Order not found"}
 
     order.payment_status = "completed"
     order.order_status = "completed"
-    order.payment_reference = razorpay_payment_id
     db.commit()
 
     # Create subscription
@@ -84,7 +90,7 @@ def verify_payment(db: Session, razorpay_order_id: str, razorpay_payment_id: str
 
     subscription = Subscription(
         user_id=order.user_id,
-        server_id=order.server_details["server_id"],
+        server_id=order.server_id,
         plan_id=order.plan_id,
         start_date=date.today(),
         end_date=end_date,
@@ -99,10 +105,8 @@ def verify_payment(db: Session, razorpay_order_id: str, razorpay_payment_id: str
     server_allocation = ServerAllocation(
         subscription_id=subscription.id,
         user_id=order.user_id,
-        server_id=order.server_details["server_id"],
+        server_id=order.server_id,
         status="active"
     )
     db.add(server_allocation)
     db.commit()
-
-    return {"status": "success", "message": "Payment verified and subscription created"}
