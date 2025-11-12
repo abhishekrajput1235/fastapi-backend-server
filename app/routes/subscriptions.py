@@ -21,5 +21,7 @@ def create_subscription(user_id: int, server_id: int, plan_id: int, db: Session 
         user_id=user_id, server_id=server_id, plan_id=plan_id,
         start_date=date.today(), end_date=end_date, total_paid=0.00, is_renewal=False
     )
-    db.add(sub); db.commit(); db.refresh(sub)
+    db.add(sub)
+    db.commit()
+    db.refresh(sub)
     return {"subscription_id": sub.id, "price": float(plan.price)}

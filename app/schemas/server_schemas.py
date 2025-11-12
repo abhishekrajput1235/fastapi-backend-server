@@ -28,7 +28,8 @@ class ServerBase(BaseModel):
     is_active: Optional[bool] = True
 
 class ServerCreate(ServerBase):
-    pass
+    server_plans: Optional[List[ServerPlanBase]] = []
+
 
 
 class ServerUpdate(BaseModel):

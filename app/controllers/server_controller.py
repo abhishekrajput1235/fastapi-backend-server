@@ -13,9 +13,30 @@ from app.schemas.server_schemas import (
 # ===============================================
 
 def create_new_server(db: Session, server: ServerCreate) -> Server:
-    """Create a new server."""
-    db_server = Server(**server.model_dump())
+    """Create a new server and associate it with plans."""
+    # Extract server_plans from the input schema
+    server_plans_data = server.server_plans
+    server_data = server.model_dump(exclude={"server_plans"})
+
+    # Create the server
+    db_server = Server(**server_data)
     db.add(db_server)
+    db.flush()  # Flush to get the server.id before committing
+
+    # Create and associate server plans
+    for sp_data in server_plans_data:
+        # Check if the plan_id exists
+        plan = db.query(Plan).filter(Plan.id == sp_data.plan_id).first()
+        if not plan:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Plan with ID {sp_data.plan_id} not found")
+
+        db_server_plan = ServerPlan(
+            server_id=db_server.id,
+            plan_id=sp_data.plan_id,
+            price_override=sp_data.price_override
+        )
+        db.add(db_server_plan)
+
     db.commit()
     db.refresh(db_server)
     return db_server

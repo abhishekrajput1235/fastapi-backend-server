@@ -1,11 +1,9 @@
 from sqlalchemy import Column, Integer, String, Numeric, Boolean, ForeignKey, Text, TIMESTAMP, func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
-
-# ✅ Import referenced models
-from app.models.plan import Plan
-from app.models.user import User
 from app.models.subscription import Subscription
+
+
 
 
 class Server(Base):
@@ -41,7 +39,7 @@ class ServerPlan(Base):
 
     # Relationships
     server = relationship("Server", back_populates="server_plans")
-    plan = relationship("Plan")
+    plan = relationship("Plan", back_populates="server_plans")
 
 
 class ServerAllocation(Base):

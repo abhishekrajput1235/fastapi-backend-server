@@ -4,7 +4,8 @@ from app.core.database import get_db
 from app.models.subscription import Subscription
 from app.models.plan import Plan
 from app.models.payment import Payment
-import os, razorpay
+import os
+import razorpay
 from datetime import datetime
 
 router = APIRouter()
@@ -32,5 +33,7 @@ def create_order(subscription_id: int, db: Session = Depends(get_db)):
         transaction_id=order["id"],
         payment_date=datetime.utcnow()
     )
-    db.add(payment); db.commit(); db.refresh(payment)
+    db.add(payment)
+    db.commit()
+    db.refresh(payment)
     return {"order_id": order["id"], "amount": float(plan.price), "key": RAZORPAY_KEY_ID, "payment_db_id": payment.id}
