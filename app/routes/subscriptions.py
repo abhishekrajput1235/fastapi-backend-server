@@ -5,15 +5,17 @@ from app.core.database import get_db
 from app.models.subscription import Subscription
 from app.models.plan import Plan
 from app.models.server import Server
+from app.models.user import User
 
 router = APIRouter()
 
 @router.post("/subscriptions/create")
 def create_subscription(user_id: int, server_id: int, plan_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
     server = db.query(Server).filter(Server.id==server_id).first()
     plan = db.query(Plan).filter(Plan.id==plan_id).first()
-    if not server or not plan:
-        raise HTTPException(404, "Server or Plan not found")
+    if not user or not server or not plan:
+        raise HTTPException(404, "User, Server or Plan not found")
     end_date = None
     if plan.duration_months:
         end_date = date.today() + timedelta(days=plan.duration_months*30)

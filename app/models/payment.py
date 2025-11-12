@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Numeric, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, Numeric, String, ForeignKey, DateTime, JSON
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -13,3 +13,4 @@ class Payment(Base):
     transaction_id = Column(String(200))  # will store razorpay order_id initially, then payment_id
     payment_date = Column(DateTime)
     created_at = Column(DateTime, server_default=func.now())
+    notes = Column(JSON)

@@ -6,9 +6,20 @@ from typing import List
 
 from app.core.database import get_db
 from app.controllers import server_controller
-from app.schemas import server_schemas
+from app.schemas import server_schemas, order_schemas
 
 router = APIRouter(prefix="/servers", tags=["Servers & Allocations"])
+
+@router.post("/buy-server", status_code=status.HTTP_201_CREATED)
+def buy_server_route(order: order_schemas.OrderCreate, db: Session = Depends(get_db)):
+    """
+    Buy a new server.
+    This will create an order and a payment link.
+    """
+    # TODO: Get user_id from authentication
+    user_id = 1
+    return server_controller.buy_server(db=db, order=order, user_id=user_id)
+
 
 # ===============================================
 # 1. Server Routes

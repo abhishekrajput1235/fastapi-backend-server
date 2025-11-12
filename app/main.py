@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from sqlalchemy import text
 from app.core.database import engine
-from app.routes import auth_routes, user_routes,server_routes, plan_routes
+from app.routes import auth_routes, user_routes,server_routes, plan_routes, payments, subscriptions
 
 
 app = FastAPI()
@@ -23,6 +23,8 @@ app.include_router(auth_routes.router)
 app.include_router(user_routes.router)
 app.include_router(server_routes.router)
 app.include_router(plan_routes.router)
+app.include_router(payments.router)
+app.include_router(subscriptions.router)
 
 
 
