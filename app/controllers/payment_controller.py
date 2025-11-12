@@ -6,14 +6,44 @@ from app.models.subscription import Subscription
 from app.models.server import ServerAllocation
 from app.models.user import User
 from app.models.plan import Plan
-import razorpay
-import os
-from datetime import date, timedelta
+from app.core.razorpay_config import razorpay_client
+from app.schemas.order import OrderCreate
+from datetime import date, timedelta, datetime
+from app.controllers.order_controller import create_order as create_order_logic
 
-RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
-RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+def create_razorpay_order(db: Session, order_details: OrderCreate, user_id: int):
+    # Create the order in the database
+    db_order = create_order_logic(db, order_details, user_id)
+    if not db_order:
+        return {"status": "error", "message": "Plan not found"}
 
-razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+    # Create a Razorpay order
+    razorpay_order_data = {
+        "amount": int(db_order.grand_total * 100),  # Amount in paise
+        "currency": "INR",
+        "notes": {"order_id": db_order.id}
+    }
+    razorpay_order = razorpay_client.order.create(razorpay_order_data)
+
+    # Create a pending payment record
+    payment = Payment(
+        user_id=user_id,
+        amount=db_order.grand_total,
+        payment_method="razorpay",
+        payment_status="pending",
+        transaction_id=razorpay_order["id"],
+        payment_date=datetime.utcnow(),
+        notes={"order_id": db_order.id}
+    )
+    db.add(payment)
+    db.commit()
+    db.refresh(payment)
+
+    return {
+        "razorpay_order_id": razorpay_order["id"],
+        "amount": db_order.grand_total,
+        "order_id": db_order.id
+    }
 
 def verify_payment(db: Session, razorpay_order_id: str, razorpay_payment_id: str, razorpay_signature: str):
     # Verify the payment signature
@@ -24,7 +54,7 @@ def verify_payment(db: Session, razorpay_order_id: str, razorpay_payment_id: str
             'razorpay_signature': razorpay_signature
         }
         razorpay_client.utility.verify_payment_signature(params_dict)
-    except razorpay.errors.SignatureVerificationError:
+    except Exception:
         return {"status": "error", "message": "Invalid payment signature"}
 
     # Update payment status
